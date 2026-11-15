@@ -2,117 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ASCII Christmas Tree</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    height: 100dvh;
-    background: #03050b;
-    overflow: hidden;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  canvas {
-    height: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
-    max-width: 100vw;
-    aspect-ratio: 9 / 16;
-    display: block;
-    cursor: pointer;
-    object-fit: contain;
-  }
-  .hint {
-    position: fixed; left: 14px; bottom: 12px;
-    font: 12px/1.5 "JetBrains Mono", Menlo, monospace;
-    color: #566074;
-    pointer-events: none;
-  }
-  @media (max-width: 768px) {
-    .hint { display: none; }
-  }
+  html, body { margin: 0; height: 100%; background: #03050b; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { height: min(100vh, calc(100vw * 16 / 9)); aspect-ratio: 9 / 16; display: block; cursor: pointer; }
+  .hint { position: fixed; left: 14px; bottom: 12px; font: 12px/1.5 "JetBrains Mono", Menlo, monospace; color: #566074; }
   .music-btn {
-    position: fixed;
-    top: max(16px, env(safe-area-inset-top));
-    right: max(16px, env(safe-area-inset-right));
-    z-index: 99;
-    background: rgba(10, 16, 32, 0.75);
-    border: 1px solid rgba(255, 215, 0, 0.4);
-    color: #e2e8f0;
-    padding: 7px 14px;
-    border-radius: 20px;
-    font: 500 12px/1.2 "JetBrains Mono", monospace;
-    cursor: pointer;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-    transition: all 0.25s ease;
+    position: fixed; top: 18px; right: 18px; z-index: 999;
+    background: rgba(10, 16, 32, 0.8); border: 1px solid rgba(255, 215, 0, 0.45);
+    color: #e2e8f0; padding: 9px 16px; border-radius: 22px;
+    font: 12px/1.2 "JetBrains Mono", monospace; cursor: pointer;
+    backdrop-filter: blur(12px); display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); transition: all 0.25s ease;
+    user-select: none;
   }
   .music-btn:hover { background: rgba(20, 30, 55, 0.95); border-color: rgba(255, 215, 0, 0.85); transform: scale(1.04); }
-  .music-btn.playing { color: #facc15; border-color: rgba(250, 204, 21, 0.85); box-shadow: 0 0 16px rgba(250, 204, 21, 0.35); }
-  .music-btn.tap-needed {
-    color: #ffffff; border-color: #f59e0b;
-    animation: softPulse 2s infinite ease-in-out;
-  }
-  @keyframes softPulse {
-    0%, 100% { box-shadow: 0 0 6px rgba(245, 158, 11, 0.4); transform: scale(1); }
-    50% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.85); transform: scale(1.04); }
-  }
+  .music-btn.playing { color: #facc15; border-color: rgba(250, 204, 21, 0.85); box-shadow: 0 0 16px rgba(250, 204, 21, 0.4); }
   .music-btn .disc { display: inline-block; transition: transform 0.3s; }
   .music-btn.playing .disc { animation: spin 3s linear infinite; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-  /* Mobile bottom sound cue (subtle, non-blocking, auto-fades) */
-  .sound-hint {
-    position: fixed;
-    bottom: max(22px, env(safe-area-inset-bottom));
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(10, 16, 32, 0.82);
-    border: 1px solid rgba(255, 215, 0, 0.35);
-    color: #e2e8f0;
-    padding: 7px 16px;
-    border-radius: 20px;
-    font: 500 12px/1 "JetBrains Mono", monospace;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-    pointer-events: none;
-    z-index: 90;
-    transition: opacity 0.5s ease;
-    animation: autoFade 5s forwards;
+  /* Start overlay for seamless autoplay compliance on Vercel & Mobile */
+  .start-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(3, 5, 11, 0.88); backdrop-filter: blur(12px);
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; transition: opacity 0.4s ease;
   }
-  @keyframes autoFade {
-    0% { opacity: 0; transform: translate(-50%, 8px); }
-    15% { opacity: 1; transform: translate(-50%, 0); }
-    80% { opacity: 1; transform: translate(-50%, 0); }
-    100% { opacity: 0; transform: translate(-50%, -4px); pointer-events: none; }
+  .start-card {
+    text-align: center; background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.2), 0 20px 50px rgba(0, 0, 0, 0.8);
+    padding: 36px 44px; border-radius: 26px; max-width: 90vw;
+    animation: glowPulse 2.4s infinite alternate; user-select: none;
+  }
+  .start-icon { font-size: 54px; margin-bottom: 12px; }
+  .start-title {
+    font: 700 22px/1.3 "JetBrains Mono", sans-serif;
+    color: #f8fafc; margin-bottom: 8px;
+  }
+  .start-sub {
+    font: 13px/1.5 "JetBrains Mono", monospace; color: #94a3b8; margin-bottom: 24px;
+  }
+  .start-btn {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #ffffff; border: none; padding: 13px 32px; border-radius: 30px;
+    font: 700 15px/1 "JetBrains Mono", monospace; cursor: pointer;
+    box-shadow: 0 4px 22px rgba(239, 68, 68, 0.5);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .start-btn:hover { transform: scale(1.05); box-shadow: 0 6px 28px rgba(239, 68, 68, 0.7); }
+  @keyframes glowPulse {
+    from { border-color: rgba(255, 215, 0, 0.35); box-shadow: 0 0 25px rgba(255, 215, 0, 0.15); }
+    to { border-color: rgba(255, 215, 0, 0.8); box-shadow: 0 0 45px rgba(255, 215, 0, 0.4); }
   }
 </style>
 </head>
 <body>
+<div id="startOverlay" class="start-overlay">
+  <div class="start-card">
+    <div class="start-icon">🎄</div>
+    <div class="start-title">Merry Christmas</div>
+    <div class="start-sub">Tap anywhere to start with music</div>
+    <button class="start-btn">▶ Start with Music 🎵</button>
+  </div>
+</div>
 <audio id="bgm" src="music.mp3" loop autoplay preload="auto"></audio>
-<button id="musicToggle" class="music-btn tap-needed" title="Toggle Music (M)">
-  <span class="disc">🎵</span> <span id="musicLabel">🔊 Sound: Tap Screen</span>
+<button id="musicToggle" class="music-btn" title="Toggle Music (M)">
+  <span class="disc">🎵</span> <span id="musicLabel">Music: ON</span>
 </button>
-<div id="soundHint" class="sound-hint">🎵 Tap anywhere for sound 🎧</div>
 <canvas id="c" width="1080" height="1920"></canvas>
 <div class="hint" id="hint">Click / Space = Pause·Play &nbsp; R = Restart &nbsp; M = Music &nbsp; ← → = Seek 2s</div>
 
@@ -1213,6 +1176,7 @@ function makeRng(seed) {
       ctx.fillText(`lights  ${nl}`, 460, SH - 62);
       ctx.fillText(`letters ${letters.toLocaleString('en-US')}`, 104, SH - 32);
 
+
       ctx.globalAlpha = 1;
     }
 
@@ -1343,23 +1307,21 @@ function makeRng(seed) {
     frame(t, dt, snap); snap = false;
     requestAnimationFrame(tick);
   }
-  // ---------- audio integration with smart mobile gesture handling
+  // ---------- audio integration with instant autoplay & overlay
   const bgm = document.getElementById('bgm');
   const musicToggle = document.getElementById('musicToggle');
   const musicLabel = document.getElementById('musicLabel');
-  const soundHint = document.getElementById('soundHint');
+  const startOverlay = document.getElementById('startOverlay');
+  let userInteracted = false;
 
   function updateMusicUI() {
     if (!bgm || !musicToggle || !musicLabel) return;
     if (!bgm.paused) {
-      musicToggle.classList.remove('tap-needed');
       musicToggle.classList.add('playing');
       musicLabel.textContent = 'Music: ON';
-      if (soundHint) soundHint.style.display = 'none';
     } else {
       musicToggle.classList.remove('playing');
-      musicToggle.classList.add('tap-needed');
-      musicLabel.textContent = '🔊 Sound: Tap Screen';
+      musicLabel.textContent = 'Music: OFF';
     }
   }
 
@@ -1369,9 +1331,10 @@ function makeRng(seed) {
     if (p !== undefined) {
       p.then(() => {
         updateMusicUI();
-      }).catch(() => {
-        // Mobile browsers require first touch gesture before unmuted audio plays
-        updateMusicUI();
+        dismissOverlay();
+      }).catch(err => {
+        // Autoplay policy on Vercel/Chrome requires user gesture
+        showOverlay();
       });
     }
   }
@@ -1392,43 +1355,71 @@ function makeRng(seed) {
     }
   }
 
+  function showOverlay() {
+    if (startOverlay && !userInteracted && (bgm && bgm.paused)) {
+      startOverlay.style.display = 'flex';
+      startOverlay.style.opacity = '1';
+      playing = false; // pause tree so they don't miss the beginning
+    }
+  }
+
+  function dismissOverlay() {
+    if (startOverlay && startOverlay.style.display !== 'none') {
+      startOverlay.style.opacity = '0';
+      setTimeout(() => { startOverlay.style.display = 'none'; }, 400);
+      playing = true;
+    }
+  }
+
   // Attempt instant autoplay immediately on page load
   playMusic();
   window.addEventListener('load', playMusic);
 
+  // Overlay click starts music & starts tree
+  if (startOverlay) {
+    const handleStart = (e) => {
+      userInteracted = true;
+      playing = true;
+      playMusic();
+      dismissOverlay();
+    };
+    startOverlay.addEventListener('click', handleStart);
+    startOverlay.addEventListener('touchstart', handleStart);
+  }
+
   if (musicToggle) {
     musicToggle.addEventListener('click', e => {
       e.stopPropagation();
+      userInteracted = true;
+      dismissOverlay();
       toggleMusic();
     });
   }
 
-  // Global unlock: first touch/tap anywhere on the whole screen starts sound without pausing tree
+  // Global unlock on ANY interaction
   const unlockAudio = () => {
-    if (bgm && bgm.paused) {
-      playMusic();
-    }
-    if (soundHint) soundHint.style.display = 'none';
+    userInteracted = true;
+    playMusic();
+    dismissOverlay();
+    ['pointerdown', 'mousedown', 'keydown', 'touchstart'].forEach(evt => {
+      window.removeEventListener(evt, unlockAudio);
+    });
   };
-  ['pointerdown', 'touchstart', 'mousedown'].forEach(evt => {
-    window.addEventListener(evt, unlockAudio, { passive: true });
+  ['pointerdown', 'mousedown', 'keydown', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, unlockAudio, { once: true, passive: true });
   });
 
   const toggle = () => {
-    // If audio was blocked on mobile, the first canvas tap should turn on music and keep tree running
-    if (bgm && bgm.paused) {
+    if (bgm && bgm.paused && !userInteracted) {
+      userInteracted = true;
       playMusic();
+      dismissOverlay();
       playing = true;
-      if (soundHint) soundHint.style.display = 'none';
       return;
     }
-    // Deliberate user taps toggle tree pause/play
+    userInteracted = true;
     playing = !playing;
-    if (playing) {
-      if (bgm && bgm.paused) playMusic();
-    } else {
-      if (bgm && !bgm.paused) pauseMusic();
-    }
+    if (playing) playMusic(); else pauseMusic();
   };
   cv.addEventListener('click', toggle);
   addEventListener('keydown', e => {

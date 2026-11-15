@@ -2,88 +2,78 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ASCII Christmas Tree</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    height: 100dvh;
-    background: #03050b;
-    overflow: hidden;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  canvas {
-    height: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
-    max-width: 100vw;
-    aspect-ratio: 9 / 16;
-    display: block;
-    cursor: pointer;
-    object-fit: contain;
-  }
-  .hint {
-    position: fixed; left: 14px; bottom: 12px;
-    font: 12px/1.5 "JetBrains Mono", Menlo, monospace;
-    color: #566074;
-    pointer-events: none;
-  }
-  @media (max-width: 768px) {
-    .hint { display: none; }
-  }
+  html, body { margin: 0; height: 100%; background: #03050b; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { height: min(100vh, calc(100vw * 16 / 9)); aspect-ratio: 9 / 16; display: block; cursor: pointer; }
+  .hint { position: fixed; left: 14px; bottom: 12px; font: 12px/1.5 "JetBrains Mono", Menlo, monospace; color: #566074; }
   .music-btn {
-    position: fixed;
-    top: max(16px, env(safe-area-inset-top));
-    right: max(16px, env(safe-area-inset-right));
-    z-index: 99;
-    background: rgba(10, 16, 32, 0.75);
-    border: 1px solid rgba(255, 215, 0, 0.4);
-    color: #e2e8f0;
-    padding: 7px 14px;
-    border-radius: 20px;
-    font: 500 12px/1.2 "JetBrains Mono", monospace;
-    cursor: pointer;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-    transition: all 0.25s ease;
+    position: fixed; top: 18px; right: 18px; z-index: 999;
+    background: rgba(10, 16, 32, 0.8); border: 1px solid rgba(255, 215, 0, 0.45);
+    color: #e2e8f0; padding: 9px 16px; border-radius: 22px;
+    font: 12px/1.2 "JetBrains Mono", monospace; cursor: pointer;
+    backdrop-filter: blur(12px); display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); transition: all 0.25s ease;
+    user-select: none;
   }
   .music-btn:hover { background: rgba(20, 30, 55, 0.95); border-color: rgba(255, 215, 0, 0.85); transform: scale(1.04); }
-  .music-btn.playing { color: #facc15; border-color: rgba(250, 204, 21, 0.85); box-shadow: 0 0 16px rgba(250, 204, 21, 0.35); }
-  .music-btn.tap-needed {
-    color: #ffffff; border-color: #f59e0b;
-    animation: softPulse 2s infinite ease-in-out;
-  }
-  @keyframes softPulse {
-    0%, 100% { box-shadow: 0 0 6px rgba(245, 158, 11, 0.4); transform: scale(1); }
-    50% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.85); transform: scale(1.04); }
-  }
+  .music-btn.playing { color: #facc15; border-color: rgba(250, 204, 21, 0.85); box-shadow: 0 0 16px rgba(250, 204, 21, 0.4); }
   .music-btn .disc { display: inline-block; transition: transform 0.3s; }
   .music-btn.playing .disc { animation: spin 3s linear infinite; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+  /* Start overlay for seamless autoplay compliance on Vercel & Mobile */
+  .start-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(3, 5, 11, 0.88); backdrop-filter: blur(12px);
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; transition: opacity 0.4s ease;
+  }
+  .start-card {
+    text-align: center; background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.2), 0 20px 50px rgba(0, 0, 0, 0.8);
+    padding: 36px 44px; border-radius: 26px; max-width: 90vw;
+    animation: glowPulse 2.4s infinite alternate; user-select: none;
+  }
+  .start-icon { font-size: 54px; margin-bottom: 12px; }
+  .start-title {
+    font: 700 22px/1.3 "JetBrains Mono", sans-serif;
+    color: #f8fafc; margin-bottom: 8px;
+  }
+  .start-sub {
+    font: 13px/1.5 "JetBrains Mono", monospace; color: #94a3b8; margin-bottom: 24px;
+  }
+  .start-btn {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #ffffff; border: none; padding: 13px 32px; border-radius: 30px;
+    font: 700 15px/1 "JetBrains Mono", monospace; cursor: pointer;
+    box-shadow: 0 4px 22px rgba(239, 68, 68, 0.5);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .start-btn:hover { transform: scale(1.05); box-shadow: 0 6px 28px rgba(239, 68, 68, 0.7); }
+  @keyframes glowPulse {
+    from { border-color: rgba(255, 215, 0, 0.35); box-shadow: 0 0 25px rgba(255, 215, 0, 0.15); }
+    to { border-color: rgba(255, 215, 0, 0.8); box-shadow: 0 0 45px rgba(255, 215, 0, 0.4); }
+  }
 </style>
 </head>
 <body>
+<div id="startOverlay" class="start-overlay">
+  <div class="start-card">
+    <div class="start-icon">🎄</div>
+    <div class="start-title">Merry Christmas</div>
+    <div class="start-sub">Tap anywhere to start with music</div>
+    <button class="start-btn">▶ Start with Music 🎵</button>
+  </div>
+</div>
 <audio id="bgm" src="music.mp3" loop autoplay preload="auto"></audio>
-<button id="musicToggle" class="music-btn playing" title="Toggle Music (M)" style="display:none">
+<button id="musicToggle" class="music-btn" title="Toggle Music (M)">
   <span class="disc">🎵</span> <span id="musicLabel">Music: ON</span>
 </button>
 <canvas id="c" width="1080" height="1920"></canvas>
@@ -1186,6 +1176,7 @@ function makeRng(seed) {
       ctx.fillText(`lights  ${nl}`, 460, SH - 62);
       ctx.fillText(`letters ${letters.toLocaleString('en-US')}`, 104, SH - 32);
 
+
       ctx.globalAlpha = 1;
     }
 
@@ -1305,197 +1296,9 @@ function makeRng(seed) {
     if (fade > 0) { ctx.fillStyle = `rgba(3,5,11,${Math.min(1, fade)})`; ctx.fillRect(0, 0, W, H); }
   }
 
-  // ---------- Coded ASCII Gift Box Intro (Surprise unwrap)
-  const GIFT_ROWS = 28, GIFT_COLS = 42;
-  const GIFT_CELLS = [];
-  for (let r = 0; r < GIFT_ROWS; r++) {
-    for (let c = 0; c < GIFT_COLS; c++) {
-      const dlx = (c - 12.5) / 7.2, dly = (r - 5.5) / 4.4;
-      const dl = dlx * dlx + dly * dly;
-      const isBowL = dl <= 1.05 && dl >= 0.28 && r <= 10;
-
-      const drx = (c - 29.5) / 7.2, dry = (r - 5.5) / 4.4;
-      const dr = drx * drx + dry * dry;
-      const isBowR = dr <= 1.05 && dr >= 0.28 && r <= 10;
-
-      const dkx = (c - 21) / 3.2, dky = (r - 9.5) / 2.2;
-      const isKnot = (dkx * dkx + dky * dky) <= 1.1;
-
-      const isLid = r >= 10 && r <= 12 && c >= 6 && c <= 36;
-      const botCurve = Math.max(0, r - 23);
-      const isBody = r >= 13 && r <= 26 && c >= (8 + botCurve * 1.6) && c <= (34 - botCurve * 1.6);
-
-      if (!isBowL && !isBowR && !isKnot && !isLid && !isBody) continue;
-
-      const isVRib = (c >= 19 && c <= 23) && (isLid || isBody || isKnot);
-      const isHRib = (r >= 18 && r <= 19) && isBody;
-
-      let ch = '#', col = [0.88, 0.12, 0.18];
-      if (isBowL || isBowR || isKnot) {
-        const d = isBowL ? dl : isBowR ? dr : (dkx * dkx + dky * dky);
-        ch = d < 0.5 ? 'W' : d < 0.8 ? '0' : '%';
-        col = d < 0.5 ? [1.0, 0.98, 0.7] : d < 0.8 ? [1.0, 0.88, 0.35] : [0.95, 0.75, 0.2];
-      } else if (isVRib || isHRib) {
-        col = [1.0, 0.86, 0.3];
-        ch = (isVRib && isHRib) ? '@' : isVRib ? (c === 21 ? 'W' : '0') : '=';
-        if (isVRib && isHRib) col = [1.0, 0.95, 0.6];
-      } else if (isLid) {
-        col = (r === 10) ? [1.0, 0.25, 0.25] : [0.85, 0.1, 0.15];
-        ch = (r === 10) ? '=' : '%';
-      } else {
-        const stripe = (r + c) % 3;
-        ch = stripe === 0 ? '#' : stripe === 1 ? '%' : '&';
-        col = [0.85 + 0.1 * Math.sin(c * 0.5), 0.12, 0.16];
-      }
-      GIFT_CELLS.push({ r, c, ch, col });
-    }
-  }
-
-  const GIFT_STARS = Array.from({ length: 65 }, (_, i) => ({
-    x: (hash(i, 1) * W) | 0,
-    y: (hash(i, 2) * H) | 0,
-    ch: '*+.'[(hash(i, 3) * 3) | 0],
-    sp: 0.5 + hash(i, 4) * 2,
-    p: hash(i, 5) * 6.28
-  }));
-
-  let giftOpened = +(qs.get('t') || 0) > 0 || qs.get('start') === '1';
-  let bursting = false, burstStart = 0;
-  let burstParticles = [];
-
-  function openGift() {
-    if (giftOpened || bursting) return;
-    playMusic();
-    bursting = true;
-    burstStart = performance.now();
-    const CW_G = 18, CH_G = 26;
-    const X0 = (W - GIFT_COLS * CW_G) / 2;
-    const Y0 = 360;
-    const cenX = W / 2, cenY = Y0 + GIFT_ROWS * CH_G * 0.58;
-    burstParticles = GIFT_CELLS.map(pt => {
-      const origX = X0 + pt.c * CW_G;
-      const origY = Y0 + pt.r * CH_G;
-      const angle = Math.atan2(origY - cenY, origX - cenX) + (Math.random() - 0.5) * 0.8;
-      const spd = 280 + Math.random() * 750;
-      return {
-        x: origX, y: origY,
-        vx: Math.cos(angle) * spd,
-        vy: Math.sin(angle) * spd - 180,
-        ch: pt.ch, col: pt.col
-      };
-    });
-  }
-
-  function drawGiftScreen(now) {
-    ctx.fillStyle = '#03050b';
-    ctx.fillRect(0, 0, W, H);
-
-    // Stars
-    ctx.font = `700 13px ${FONT}`;
-    for (const st of GIFT_STARS) {
-      const a = 0.35 + 0.5 * (0.5 + 0.5 * Math.sin(now * 0.002 * st.sp + st.p));
-      ctx.fillStyle = `rgba(235,242,255,${a.toFixed(2)})`;
-      ctx.fillText(st.ch, st.x, st.y);
-    }
-
-    if (bursting) {
-      const elapsed = (now - burstStart) / 1000;
-      const progress = elapsed / 0.65;
-      if (progress >= 1) {
-        bursting = false;
-        giftOpened = true;
-        prev = performance.now();
-        t = 0;
-        snap = true;
-        return;
-      }
-      ctx.font = `700 24px ${FONT}`;
-      const alpha = Math.max(0, 1 - progress);
-      ctx.globalAlpha = alpha;
-      for (const p of burstParticles) {
-        const px = p.x + p.vx * elapsed;
-        const py = p.y + p.vy * elapsed + 600 * elapsed * elapsed;
-        const [r, g, b] = p.col;
-        ctx.fillStyle = rgb(r, g, b);
-        const glyph = progress < 0.3 ? p.ch : (progress < 0.65 ? '*' : '+');
-        ctx.fillText(glyph, px, py);
-      }
-      ctx.globalAlpha = 1;
-      return;
-    }
-
-    // Floating bob
-    const bob = Math.sin(now * 0.0022) * 12;
-    const CW_G = 18, CH_G = 26;
-    const X0 = (W - GIFT_COLS * CW_G) / 2;
-    const Y0 = 360 + bob;
-
-    // Header label
-    ctx.font = `700 22px ${FONT}`;
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#64748b';
-    ctx.fillText('~/coded-gift', W / 2, Y0 - 45);
-
-    // ASCII Gift Cells
-    ctx.font = `700 24px ${FONT}`;
-    ctx.textAlign = 'left';
-    for (const pt of GIFT_CELLS) {
-      const x = X0 + pt.c * CW_G;
-      const y = Y0 + pt.r * CH_G;
-      const sh = 0.85 + 0.15 * Math.sin(now * 0.003 + pt.r * 0.2 + pt.c * 0.1);
-      const [r, g, b] = pt.col;
-      ctx.fillStyle = rgb(r * sh, g * sh, b * sh);
-      ctx.fillText(pt.ch, x, y);
-    }
-
-    // Center Play Button on the gift box
-    const cenX = W / 2, cenY = Y0 + GIFT_ROWS * CH_G * 0.58;
-    const pulse = Math.sin(now * 0.004);
-
-    // Outer glow ring
-    ctx.beginPath();
-    ctx.arc(cenX, cenY, 56 + pulse * 4, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 215, 0, 0.18)';
-    ctx.fill();
-
-    // Button circle
-    ctx.beginPath();
-    ctx.arc(cenX, cenY, 46, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
-    ctx.shadowBlur = 24;
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // Play triangle
-    ctx.beginPath();
-    ctx.moveTo(cenX - 10, cenY - 18);
-    ctx.lineTo(cenX + 18, cenY);
-    ctx.lineTo(cenX - 10, cenY + 18);
-    ctx.closePath();
-    ctx.fillStyle = '#e11d48';
-    ctx.fill();
-
-    // Bottom prompt button
-    const btnPulse = 0.85 + 0.15 * Math.sin(now * 0.003);
-    ctx.font = `700 28px ${FONT}`;
-    ctx.textAlign = 'center';
-    ctx.fillStyle = `rgba(253, 224, 71, ${btnPulse.toFixed(2)})`;
-    ctx.fillText('[ 🎁 Tap to Open Surprise ]', W / 2, Y0 + GIFT_ROWS * CH_G + 65);
-
-    ctx.font = `18px ${FONT}`;
-    ctx.fillStyle = '#64748b';
-    ctx.fillText('A surprise is waiting inside...', W / 2, Y0 + GIFT_ROWS * CH_G + 105);
-  }
-
   // ---------- clock + controls
   let t = Math.max(0, +(qs.get('t') || 0)), playing = qs.get('pause') !== '1', prev = performance.now(), snap = true;
   function tick(now) {
-    if (!giftOpened) {
-      drawGiftScreen(now);
-      requestAnimationFrame(tick);
-      return;
-    }
     const dt = Math.min(0.1, (now - prev) / 1000); prev = now;
     if (dt > 0) fpsAvg += (Math.min(60, 1 / dt) - fpsAvg) * 0.05;
     if (playing) { t += dt; if (t > LOOP) { t = 0; snap = true; } }
@@ -1504,27 +1307,21 @@ function makeRng(seed) {
     frame(t, dt, snap); snap = false;
     requestAnimationFrame(tick);
   }
-  // ---------- audio integration with smart mobile gesture handling
+  // ---------- audio integration with instant autoplay & overlay
   const bgm = document.getElementById('bgm');
   const musicToggle = document.getElementById('musicToggle');
   const musicLabel = document.getElementById('musicLabel');
-  const soundHint = document.getElementById('soundHint');
+  const startOverlay = document.getElementById('startOverlay');
+  let userInteracted = false;
 
   function updateMusicUI() {
     if (!bgm || !musicToggle || !musicLabel) return;
-    if (!giftOpened) {
-      musicToggle.style.display = 'none';
-      return;
-    }
-    musicToggle.style.display = 'flex';
     if (!bgm.paused) {
-      musicToggle.classList.remove('need-tap');
       musicToggle.classList.add('playing');
       musicLabel.textContent = 'Music: ON';
     } else {
       musicToggle.classList.remove('playing');
-      musicToggle.classList.add('need-tap');
-      musicLabel.textContent = '🔊 Tap for Sound';
+      musicLabel.textContent = 'Music: OFF';
     }
   }
 
@@ -1534,9 +1331,10 @@ function makeRng(seed) {
     if (p !== undefined) {
       p.then(() => {
         updateMusicUI();
-      }).catch(() => {
-        // Mobile browsers require first touch gesture before unmuted audio plays
-        updateMusicUI();
+        dismissOverlay();
+      }).catch(err => {
+        // Autoplay policy on Vercel/Chrome requires user gesture
+        showOverlay();
       });
     }
   }
@@ -1557,57 +1355,75 @@ function makeRng(seed) {
     }
   }
 
+  function showOverlay() {
+    if (startOverlay && !userInteracted && (bgm && bgm.paused)) {
+      startOverlay.style.display = 'flex';
+      startOverlay.style.opacity = '1';
+      playing = false; // pause tree so they don't miss the beginning
+    }
+  }
+
+  function dismissOverlay() {
+    if (startOverlay && startOverlay.style.display !== 'none') {
+      startOverlay.style.opacity = '0';
+      setTimeout(() => { startOverlay.style.display = 'none'; }, 400);
+      playing = true;
+    }
+  }
+
   // Attempt instant autoplay immediately on page load
   playMusic();
   window.addEventListener('load', playMusic);
 
+  // Overlay click starts music & starts tree
+  if (startOverlay) {
+    const handleStart = (e) => {
+      userInteracted = true;
+      playing = true;
+      playMusic();
+      dismissOverlay();
+    };
+    startOverlay.addEventListener('click', handleStart);
+    startOverlay.addEventListener('touchstart', handleStart);
+  }
+
   if (musicToggle) {
     musicToggle.addEventListener('click', e => {
       e.stopPropagation();
+      userInteracted = true;
+      dismissOverlay();
       toggleMusic();
     });
   }
 
-  // Global unlock: first touch/tap anywhere on the whole screen starts sound without pausing tree
+  // Global unlock on ANY interaction
   const unlockAudio = () => {
-    if (!giftOpened) {
-      openGift();
-      return;
-    }
-    if (bgm && bgm.paused) {
-      playMusic();
-    }
+    userInteracted = true;
+    playMusic();
+    dismissOverlay();
+    ['pointerdown', 'mousedown', 'keydown', 'touchstart'].forEach(evt => {
+      window.removeEventListener(evt, unlockAudio);
+    });
   };
-  ['pointerdown', 'touchstart', 'mousedown'].forEach(evt => {
-    window.addEventListener(evt, unlockAudio, { passive: true });
+  ['pointerdown', 'mousedown', 'keydown', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, unlockAudio, { once: true, passive: true });
   });
 
   const toggle = () => {
-    if (!giftOpened) {
-      openGift();
-      return;
-    }
-    // If audio was blocked on mobile, the first canvas tap should turn on music and keep tree running
-    if (bgm && bgm.paused) {
+    if (bgm && bgm.paused && !userInteracted) {
+      userInteracted = true;
       playMusic();
+      dismissOverlay();
       playing = true;
       return;
     }
-    // Deliberate user taps toggle tree pause/play
+    userInteracted = true;
     playing = !playing;
-    if (playing) {
-      if (bgm && bgm.paused) playMusic();
-    } else {
-      if (bgm && !bgm.paused) pauseMusic();
-    }
+    if (playing) playMusic(); else pauseMusic();
   };
   cv.addEventListener('click', toggle);
   addEventListener('keydown', e => {
-    if (e.code === 'Space') {
-      e.preventDefault();
-      if (!giftOpened) { openGift(); return; }
-      toggle();
-    }
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
     else if (e.key === 'r' || e.key === 'R') {
       t = 0; snap = true;
       if (bgm) { bgm.currentTime = 0; playMusic(); }
